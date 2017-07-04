@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>TreeGrid Lines - jQuery EasyUI Demo</title>
+	<link rel="stylesheet" type="text/css" href="../../themes/default/easyui.css">
+	<link rel="stylesheet" type="text/css" href="../../themes/icon.css">
+	<link rel="stylesheet" type="text/css" href="../demo.css">
+	<script type="text/javascript" src="../../jquery.min.js"></script>
+	<script type="text/javascript" src="../../jquery.easyui.min.js"></script>
+</head>
+<body>
+	<table id="tt" style="width:600px;height:400px"></table> 
+
+	<div id="dd">
+	<div id="cc" class="easyui-layout" fit="true">  
+     <div region="south" style="height:20%;">
+       <input type="button" id="add_bl" value="保存"/>
+     </div>  
+	 <div region="center" style="height:80%;">
+	 	<table>
+	       <tr>
+	       	<th>变量名<th><td><input type="text" id="a_blm"/><td>
+	       </tr>
+	       <tr>
+	       	<th>变量类型<th><td><input type="text" id="a_bllx"/><td>
+	       </tr>
+       </table>	
+	 </div>  
+
+  </div> 
+
+
+
+	</div> 
+</body>
+<script type="text/javascript">
+	var editIndex='-99';
+	var _bl=[];
+	var _ysf=[{   "id":1,   
+"text":"text1"  
+  },{   
+    "id":2,   
+    "text":"text2"  
+ },{   
+     "id":3,   
+    "text":"text3",   
+    "selected":true  
+ },{   
+    "id":4,   
+   "text":"text4"  
+ },{   
+   "id":5,   
+   "text":"text5"  
+ }]  
+;
+	$('#add_bl').click(function(){
+		var tmp_bl={id:$('#a_blm').val(),name:$('#a_bllx').val()};
+		_bl.push(tmp_bl);
+		$('#dd').dialog('close');
+		alert('添加成功');
+	});
+
+	var number=1;
+    var gridData=[{
+		"id":1,
+		"name":'/-',
+		"tgz":"公式规则",
+		"tbl":"",
+		"data":""
+	}];
+
+	$('#dd').dialog({    
+	    title: '添加变量',    
+	    width: 300,    
+	    height: 150,    
+	    closed: true,    
+	    cache: false,      
+	    modal: true   
+	}); 
+
+	function addNode(type,tgz){
+		number++;
+		var node = $('#tt').treegrid('getSelected');
+		if (node){
+			if(node.name.split('-')[0]!='*'){
+				$('#tt').treegrid('append',{
+					parent: node.id, 
+					data: [{
+						id: number,
+						name:type+'-'+number,
+						tgz: tgz,
+						tbl:"",
+						data:""
+					}]
+				});
+			}else{
+				alert("此处不能添加数值行");
+			}
+		}else{
+		 	alert("请选择节点再添加");
+		}
+	}
+
+	$(function(){
+		$('#tt').treegrid({  
+		    title:'规则设计器',
+		    lines: true,
+		    rownumbers: true,
+		    toolbar:[{text:'添加数值行',iconCls:'icon-add',handler:function(){
+				    	addNode('*','数值行');
+				    }},'-',
+		    		{text:'并且',iconCls:'icon-add',handler:function(){
+				    	addNode('&','&并且');
+				    }},'-',
+					{text:'或者',iconCls:'icon-add',handler:function(){
+				    	addNode('||','||或者');
+					}},'-',
+					{text:'编辑',iconCls:'icon-edit',handler:function(){
+						var node = $('#tt').treegrid('getSelected');
+						if(editIndex=='-99'){
+							if(node.id!='1'){
+								editIndex=node.id;
+								$('#tt').treegrid('beginEdit',editIndex);
+							}else{
+								alert("根目录不能编辑");
+							}
+						}else{
+							$('#tt').treegrid('endEdit',editIndex);
+							if(node.id!='1'){
+								editIndex=node.id;
+								$('#tt').treegrid('beginEdit',editIndex);
+							}else{
+								alert("根目录不能编辑");
+							}
+						}
+					}},'-',
+					{text:'新增变量',iconCls:'icon-add',handler:function(){
+						$('#a_blm').val('');
+						$('#a_bllx').val('');
+						$('#dd').dialog('open');
+					}},'-',
+					{text:'删除',iconCls:'icon-remove',handler:function(){
+						var node = $('#tt').treegrid('getSelected');
+						if (node){
+							if(node.id!='1'){
+								$('#tt').treegrid('remove',node.id);
+							}else{
+								alert("不能删除根节点");
+							}
+						}else{
+						 	alert("请选择节点再添加");
+						}
+					}}],
+		    url:'',    
+		    idField:'id',    
+		    treeField:'tgz',    
+		    columns:[[    
+		        {title:'规则信息数',field:'tgz',width:200},    
+		        {field:'tbl',title:'变量',width:100,editor: {type : 'combobox',data:_bl}},    
+		        {field:'ysf',title:'运算符',width:100,editor: {type : 'combobox',options: {data: _ysf, valueField: "id", textField: "text" }}},    
+		        {field:'data',title:'值',width:100,editor: {type : 'text'}}    
+		    ]]    
+		});  
+
+		$('#tt').treegrid('loadData',gridData);
+	})
+
+</script>
+</html>
