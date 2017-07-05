@@ -36,30 +36,23 @@
 </body>
 <script type="text/javascript">
 	var editIndex='-99';
-	var _bl=[];
-	var _ysf=[{   "id":1,   
-"text":"text1"  
-  },{   
-    "id":2,   
-    "text":"text2"  
- },{   
-     "id":3,   
-    "text":"text3",   
-    "selected":true  
- },{   
-    "id":4,   
-   "text":"text4"  
- },{   
-   "id":5,   
-   "text":"text5"  
- }]  
-;
+	var _bl=[{"id":">","text":">"}];
+	var _ysf=[{"id":">","text":">"},
+			  {"id":"==","text":"=="},
+			  {"id":"<","text":"<"},
+			  {"id":">=","text":">="},
+			  {"id":"<=","text":"<="}];
 	$('#add_bl').click(function(){
-		var tmp_bl={id:$('#a_blm').val(),name:$('#a_bllx').val()};
+		var tmp_bl={"id":$('#a_blm').val(),"text":$('#a_blm').val()};
 		_bl.push(tmp_bl);
 		$('#dd').dialog('close');
-		alert('添加成功');
+		// alert('添加成功');
+
 	});
+
+    function _getBl(){
+    	return _bl;
+    }
 
 	var number=1;
     var gridData=[{
@@ -83,7 +76,7 @@
 		number++;
 		var node = $('#tt').treegrid('getSelected');
 		if (node){
-			if(node.name.split('-')[0]!='*'){
+			if(!(node.name.split('-')[0]=='/'&&type=='*')&&!(node.name.split('-')[0]=='*'&&type=='*')){
 				$('#tt').treegrid('append',{
 					parent: node.id, 
 					data: [{
@@ -107,8 +100,9 @@
 		    title:'规则设计器',
 		    lines: true,
 		    rownumbers: true,
-		    toolbar:[{text:'添加数值行',iconCls:'icon-add',handler:function(){
-				    	addNode('*','数值行');
+		    toolbar:[
+		    		{text:'生成公式',iconCls:'icon-ok',handler:function(){
+				    	// fxMain();
 				    }},'-',
 		    		{text:'并且',iconCls:'icon-add',handler:function(){
 				    	addNode('&','&并且');
@@ -116,26 +110,35 @@
 					{text:'或者',iconCls:'icon-add',handler:function(){
 				    	addNode('||','||或者');
 					}},'-',
+					{text:'添加数值行',iconCls:'icon-add',handler:function(){
+		    			if(editIndex!='-99'){
+							$('#tt').treegrid('endEdit',editIndex);
+		    			}
+				    	addNode('*','数值行');
+				    }},'-',
 					{text:'编辑',iconCls:'icon-edit',handler:function(){
 						var node = $('#tt').treegrid('getSelected');
 						if(editIndex=='-99'){
-							if(node.id!='1'){
+							if(node.id!='1'&&node.name.split('-')[0]=='*'){
 								editIndex=node.id;
 								$('#tt').treegrid('beginEdit',editIndex);
 							}else{
-								alert("根目录不能编辑");
+								alert("只有数值行才能编辑");
 							}
 						}else{
 							$('#tt').treegrid('endEdit',editIndex);
-							if(node.id!='1'){
+							if(node.id!='1'&&node.name.split('-')[0]=='*'){
 								editIndex=node.id;
 								$('#tt').treegrid('beginEdit',editIndex);
 							}else{
-								alert("根目录不能编辑");
+								alert("只有数值行才能编辑");
 							}
 						}
 					}},'-',
 					{text:'新增变量',iconCls:'icon-add',handler:function(){
+						if(editIndex!='-99'){
+								$('#tt').treegrid('endEdit',editIndex);
+						}
 						$('#a_blm').val('');
 						$('#a_bllx').val('');
 						$('#dd').dialog('open');
@@ -143,7 +146,7 @@
 					{text:'删除',iconCls:'icon-remove',handler:function(){
 						var node = $('#tt').treegrid('getSelected');
 						if (node){
-							if(node.id!='1'){
+							if(node.id!='1'){//
 								$('#tt').treegrid('remove',node.id);
 							}else{
 								alert("不能删除根节点");
@@ -157,14 +160,63 @@
 		    treeField:'tgz',    
 		    columns:[[    
 		        {title:'规则信息数',field:'tgz',width:200},    
-		        {field:'tbl',title:'变量',width:100,editor: {type : 'combobox',data:_bl}},    
-		        {field:'ysf',title:'运算符',width:100,editor: {type : 'combobox',options: {data: _ysf, valueField: "id", textField: "text" }}},    
-		        {field:'data',title:'值',width:100,editor: {type : 'text'}}    
-		    ]]    
-		});  
+		        {field:'tbl',title:'变量',width:100,editor: {type : 'combobox',options:{data:'', valueField: "id", textField: "text" ,onBeforeLoad:function(){
+		        		$(this).combobox('loadData',_bl);
 
+		        }}}},    
+		        {field:'ysf',title:'运算符',width:100,editor: {type : 'combobox',options:{data: _ysf, valueField: "id", textField: "text" }}},    
+		        {field:'data',title:'值',width:100,editor: {type : 'text',required:true}}    
+		    ]]
+		});  
 		$('#tt').treegrid('loadData',gridData);
-	})
+	});
+
+
+	/**公式部分待开发**/
+	function fxMain(){
+		
+		if(editIndex!='-99'){
+			$('#tt').treegrid('endEdit',editIndex);
+			editIndex=='-99';
+		}
+        var allNode=$('#tt').treegrid('getRoots')[0];
+        if(allNode.name.split('-')[0]=='/'){
+        	if(allNode.children.length==1){
+        		traverseTree(allNode.children[0],0);
+        	}else{
+        		alert("根节点不能拥有两个并列运算符");
+        	}
+        }
+	}
+
+	var text='';
+	function traverseNode(node,number){
+	  	for(var i=0;i<number;i++){
+	  		text+=':code';
+	  		if(i<number-1){
+	  			text+=node.name.split('-')[0];
+	  		}
+	  	}
+	  	console.info(text);
+	}
+
+	function traverseTree(node,index){
+	    if (!node) {
+	        return;
+	    }
+	    if(node.children&&node.children.length>0){
+		    traverseNode(node,node.children.length);
+		}else{
+			traverseNode(node,0);
+		}
+	    if (node.children && node.children.length > 0) {
+	        for (var i = 0; i < node.children.length; i++) {
+	            this.traverseTree(node.children[i],i);
+	        }
+	    }
+	}
+
+
 
 </script>
 </html>
