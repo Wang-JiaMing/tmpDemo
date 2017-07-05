@@ -27,16 +27,12 @@
 	       </tr>
        </table>	
 	 </div>  
-
   </div> 
-
-
-
-	</div> 
+</div> 
 </body>
 <script type="text/javascript">
 	var editIndex='-99';
-	var _bl=[{"id":">","text":">"}];
+	var _bl=[{"id":"x","text":"x"}];
 	var _ysf=[{"id":">","text":">"},
 			  {"id":"==","text":"=="},
 			  {"id":"<","text":"<"},
@@ -58,9 +54,10 @@
     var gridData=[{
 		"id":1,
 		"name":'/-',
-		"tgz":"公式规则",
+		"tgz":"code",
 		"tbl":"",
-		"data":""
+		"data":"",
+		"children":[]
 	}];
 
 	$('#dd').dialog({    
@@ -73,22 +70,41 @@
 	}); 
 
 	function addNode(type,tgz){
+		if(editIndex!='-99'){
+			$('#tt').treegrid('endEdit',editIndex);
+			editIndex='-99'
+		}
 		number++;
 		var node = $('#tt').treegrid('getSelected');
 		if (node){
-			if(!(node.name.split('-')[0]=='/'&&type=='*')&&!(node.name.split('-')[0]=='*'&&type=='*')){
-				$('#tt').treegrid('append',{
-					parent: node.id, 
-					data: [{
-						id: number,
-						name:type+'-'+number,
-						tgz: tgz,
-						tbl:"",
-						data:""
-					}]
-				});
-			}else{
-				alert("此处不能添加数值行");
+			if($('#tt').treegrid('getLevel',node.id)<3){
+				if($('#tt').treegrid('getLevel',node.id)=='1'){
+					$('#tt').treegrid('append',{
+						parent: node.id, 
+						data: [{
+							id: number,
+							name:type+'-'+number,
+							tgz: tgz,
+							tbl:"",
+							data:"",
+							children:[]
+						}]
+					});
+				}else{
+					if(node.children.length<2){
+						$('#tt').treegrid('append',{
+							parent: node.id, 
+							data: [{
+								id: number,
+								name:type+'-'+number,
+								tgz: tgz,
+								tbl:"",
+								data:"",
+								children:[]
+							}]
+						});	
+					}
+				}
 			}
 		}else{
 		 	alert("请选择节点再添加");
@@ -102,7 +118,11 @@
 		    rownumbers: true,
 		    toolbar:[
 		    		{text:'生成公式',iconCls:'icon-ok',handler:function(){
-				    	// fxMain();
+		    			if(editIndex!='-99'){
+								$('#tt').treegrid('endEdit',editIndex);
+								editIndex='-99';
+						}
+				    	fxMain();
 				    }},'-',
 		    		{text:'并且',iconCls:'icon-add',handler:function(){
 				    	addNode('&','&并且');
@@ -110,28 +130,18 @@
 					{text:'或者',iconCls:'icon-add',handler:function(){
 				    	addNode('||','||或者');
 					}},'-',
-					{text:'添加数值行',iconCls:'icon-add',handler:function(){
-		    			if(editIndex!='-99'){
-							$('#tt').treegrid('endEdit',editIndex);
-		    			}
-				    	addNode('*','数值行');
-				    }},'-',
 					{text:'编辑',iconCls:'icon-edit',handler:function(){
 						var node = $('#tt').treegrid('getSelected');
 						if(editIndex=='-99'){
-							if(node.id!='1'&&node.name.split('-')[0]=='*'){
+							if(node.id!='1'){
 								editIndex=node.id;
 								$('#tt').treegrid('beginEdit',editIndex);
-							}else{
-								alert("只有数值行才能编辑");
 							}
 						}else{
 							$('#tt').treegrid('endEdit',editIndex);
-							if(node.id!='1'&&node.name.split('-')[0]=='*'){
+							if(node.id!='1'){
 								editIndex=node.id;
 								$('#tt').treegrid('beginEdit',editIndex);
-							}else{
-								alert("只有数值行才能编辑");
 							}
 						}
 					}},'-',
@@ -171,49 +181,45 @@
 		$('#tt').treegrid('loadData',gridData);
 	});
 
-
+    
 	/**公式部分待开发**/
 	function fxMain(){
-		
-		if(editIndex!='-99'){
-			$('#tt').treegrid('endEdit',editIndex);
-			editIndex=='-99';
-		}
-        var allNode=$('#tt').treegrid('getRoots')[0];
-        if(allNode.name.split('-')[0]=='/'){
-        	if(allNode.children.length==1){
-        		traverseTree(allNode.children[0],0);
-        	}else{
-        		alert("根节点不能拥有两个并列运算符");
-        	}
-        }
-	}
+		var text="code=";
+   		var array=new Array();
+		var _ch=$('#tt').treegrid('getRoot','1').children;
+	 	for(var i=0;i<_ch.length;i++){
+	 		var tmpText='';
+	 		if(i!=0){
+	 			var tmpText=_ch[i].name.split('-')[0];
+	 		}
+ 			// if(_ch.length>1){
+ 				if(_ch[i].children.length>0){
+ 					tmpText+="(";
+		 			for (var ii =0; ii<_ch[i].children.length ; ii++){
+		 				if(_ch[i].children.length>1){
+			 				if(ii==0){
+			 					tmpText+=_ch[i].children[ii].tbl+_ch[i].children[ii].ysf+_ch[i].children[ii].data+_ch[i].children[ii].name.split('-')[0];
+			 				}else{
+								tmpText+=_ch[i].children[ii].tbl+_ch[i].children[ii].ysf+_ch[i].children[ii].data;
+			 				}
+		 				}else{
+		 					tmpText+=_ch[i].children[ii].tbl+_ch[i].children[ii].ysf+_ch[i].children[ii].data;
+		 				}
+		 			}
+	 				tmpText+=")";	
+		 		}else{
+		 			tmpText+=_ch[i].tbl+_ch[i].ysf+_ch[i].data;
 
-	var text='';
-	function traverseNode(node,number){
-	  	for(var i=0;i<number;i++){
-	  		text+=':code';
-	  		if(i<number-1){
-	  			text+=node.name.split('-')[0];
-	  		}
-	  	}
-	  	console.info(text);
-	}
+		 		}
+			 	array.push(tmpText);
+ 			// }else{
 
-	function traverseTree(node,index){
-	    if (!node) {
-	        return;
-	    }
-	    if(node.children&&node.children.length>0){
-		    traverseNode(node,node.children.length);
-		}else{
-			traverseNode(node,0);
-		}
-	    if (node.children && node.children.length > 0) {
-	        for (var i = 0; i < node.children.length; i++) {
-	            this.traverseTree(node.children[i],i);
-	        }
-	    }
+ 			// }
+	 	}
+	 	for(var j=0;j<array.length;j++){
+	 		text+=array[j];
+	 	}
+	 	$.messager.alert('公式生成结果',text); 
 	}
 
 
